@@ -107,18 +107,15 @@ def onnx_simplify(onnx_dir:str, input_names, input_tensors, force=False):
     opt.info('Model: optimized')
     opt.save_onnx(sim_onnx_dir)
     input_dict = {name: tensor.detach().cpu().numpy() for name, tensor in zip(input_names, input_tensors)}
-    model_opt, check_ok = onnxsim.simplify(
-        onnx_dir,
-        check_n = 3,
-        input_data=input_dict,
-        dynamic_input_shape=False)
-    if check_ok:
-        onnx.save(model_opt, sim_onnx_dir)
-    else:
-        raise RuntimeError("Failed to simplify ONNX model.")
-    print(f'Successfully simplified ONNX model: {sim_onnx_dir}')
-    return sim_onnx_dir
 
+    model_opt, check_ok = onnxsim.simplify(onnx_dir, input_data=input_dict)
+    if not check_ok: raise RuntimeError("Failed to simplify")
+    onnx.save(model_opt, sim_onnx_dir)
+
+    opt = OnnxOptimizer(sim_onnx_dir)
+    opt.common_opt()
+    opt.save_onnx(sim_onnx_dir)
+    return sim_onnx_dir
 
 def trtexec(onnx_dir:str, args) -> None:
     engine_dir = onnx_dir.replace(".onnx", f".engine")

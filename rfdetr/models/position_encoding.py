@@ -38,14 +38,22 @@ class PositionEmbeddingSine(nn.Module):
         if scale is None:
             scale = 2 * math.pi
         self.scale = scale
+
+        dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32)
+        dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+        self.register_buffer('dim_t_fixed', dim_t, persistent=False)
+
         self._export = False
-    
+
     def export(self):
         self._export = True
         self._forward_origin = self.forward
         self.forward = self.forward_export
 
     def forward(self, tensor_list: NestedTensor, align_dim_orders = True):
+        if self._export:
+            return self.forward_export(tensor_list.mask, align_dim_orders)
+
         x = tensor_list.tensors
         mask = tensor_list.mask
         assert mask is not None
@@ -71,7 +79,7 @@ class PositionEmbeddingSine(nn.Module):
             pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
             # return: (bs, C, H, W)
         return pos
-    
+
     def forward_export(self, mask:torch.Tensor, align_dim_orders = True):
         assert mask is not None
         not_mask = ~mask
@@ -82,13 +90,20 @@ class PositionEmbeddingSine(nn.Module):
             y_embed = y_embed / (y_embed[:, -1:, :] + eps) * self.scale
             x_embed = x_embed / (x_embed[:, :, -1:] + eps) * self.scale
 
-        dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=mask.device)
-        dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+        dim_t = self.dim_t_fixed.to(mask.device)
 
         pos_x = x_embed[:, :, :, None] / dim_t
         pos_y = y_embed[:, :, :, None] / dim_t
-        pos_x = torch.stack((pos_x[:, :, :, 0::2].sin(), pos_x[:, :, :, 1::2].cos()), dim=4).flatten(3)
-        pos_y = torch.stack((pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4).flatten(3)
+        def interleave_sin_cos(t):
+            # t shape: [bs, H, W, C]
+            out = torch.empty_like(t)
+            out[:, :, :, 0::2] = t[:, :, :, 0::2].sin()
+            out[:, :, :, 1::2] = t[:, :, :, 1::2].cos()
+            return out
+
+        pos_x = interleave_sin_cos(pos_x)
+        pos_y = interleave_sin_cos(pos_y)
+
         if align_dim_orders:
             pos = torch.cat((pos_y, pos_x), dim=3).permute(1, 2, 0, 3)
             # return: (H, W, bs, C)

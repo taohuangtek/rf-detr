@@ -38,7 +38,7 @@ keywords = ["machine-learning", "deep-learning", "vision", "ML", "DL", "AI", "DE
 dependencies = [
     "cython",
     "pycocotools",
-    "torch>=1.13.0",
+    "torch==2.8.0",
     "torchvision>=0.14.0",
     "fairscale",
     "scipy",
@@ -63,10 +63,11 @@ dependencies = [
 
 [project.optional-dependencies]
 onnxexport = [
-    "onnx",
+    "onnx==1.19.1",
     "onnxsim",
     "onnx_graphsurgeon",
-    "onnxruntime"
+    "onnxruntime",
+    "onnxscript"
 ]
 metrics = [
     "tensorboard>=2.13.0",

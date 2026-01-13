@@ -41,11 +41,12 @@ class MLP(nn.Module):
 
 
 def gen_sineembed_for_position(pos_tensor, dim=128):
-    # n_query, bs, _ = pos_tensor.size()
-    # sineembed_tensor = torch.zeros(n_query, bs, 256)
     scale = 2 * math.pi
-    dim_t = torch.arange(dim, dtype=pos_tensor.dtype, device=pos_tensor.device)
+    device = pos_tensor.device
+    dtype = pos_tensor.dtype
+    dim_t = torch.arange(dim, dtype=dtype, device=device)
     dim_t = 10000 ** (2 * (dim_t // 2) / dim)
+
     x_embed = pos_tensor[:, :, 0] * scale
     y_embed = pos_tensor[:, :, 1] * scale
     pos_x = x_embed[:, :, None] / dim_t

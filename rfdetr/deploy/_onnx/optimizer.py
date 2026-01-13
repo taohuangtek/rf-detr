@@ -577,3 +577,9 @@ class OnnxOptimizer():
         while self.fuse_qkv_insert_fmha(num_heads, mha_index):
             mha_index += 1
         return mha_index
+
+    def flatten_5d_reshape(self):
+        for node in self.graph.nodes:
+            if node.op == "Reshape" and len(node.outputs[0].shape) == 5:
+                pass
+        self.cleanup()
