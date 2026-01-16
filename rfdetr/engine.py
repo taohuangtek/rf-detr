@@ -184,8 +184,11 @@ def coco_extended_metrics(coco_eval):
     """
 
     iou_thrs, rec_thrs = coco_eval.params.iouThrs, coco_eval.params.recThrs
+    #iou50_idx, area_idx, maxdet_idx = (
+    #    int(np.argwhere(np.isclose(iou_thrs, 0.50))), 0, 2)
     iou50_idx, area_idx, maxdet_idx = (
-        int(np.argwhere(np.isclose(iou_thrs, 0.50))), 0, 2)
+        int(np.argwhere(np.isclose(iou_thrs, 0.50)).item()), 0, 2)
+
 
     P = coco_eval.eval["precision"]
     S = coco_eval.eval["scores"]
@@ -339,3 +342,4 @@ def evaluate(model, criterion, postprocess, data_loader, base_ds, device, args=N
             results_json = coco_extended_metrics(coco_evaluator.coco_eval["segm"])
             stats["coco_eval_masks"] = coco_evaluator.coco_eval["segm"].stats.tolist()
     return stats, coco_evaluator
+
