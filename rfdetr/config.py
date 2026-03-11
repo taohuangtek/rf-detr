@@ -88,7 +88,7 @@ class RFDETRSmallConfig(RFDETRBaseConfig):
     The configuration for an RF-DETR Small model.
     """
     out_feature_indexes: List[int] = [3, 6, 9, 12]
-    num_windows: int = 2
+    num_windows: int = 1
     dec_layers: int = 3
     patch_size: int = 16
     resolution: int = 512
